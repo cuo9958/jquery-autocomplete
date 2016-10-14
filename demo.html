@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>测试</title>
+		<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+		<style>
+			#demo {
+				margin: 50px;
+				border: solid 1px #bb0000;
+				width: 220px;
+				height: 25px;
+			}
+			
+			.autocomplete_container {
+				position: relative;
+				top: 0;
+				left: 0;
+				width: 100%;
+				margin: 0 auto;
+			}
+			
+			.autocomplete_container input {
+				width: 100%;
+				height: 100%;
+				border: none;
+				outline: none;
+				background: none;
+				padding: 5px 10px;
+				box-sizing: border-box;
+				-webkit-box-sizing: border-box;
+				-moz-box-sizing: border-box;
+				-o-box-sizing: border-box;
+				-ms-box-sizing: border-box;
+			}
+			
+			.autocomplete_container .autocomplete_result {
+				position: absolute;
+				left: -1px;
+				z-index: 999;
+				width: 100%;
+				background: #fff;
+				border-left: 1px solid rgba(0, 0, 0, 0.11);
+				border-right: 1px solid rgba(0, 0, 0, 0.11);
+			}
+			
+			.autocomplete_container .autocomplete_result ul,
+			.autocomplete_container .autocomplete_result li {
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+			
+			.autocomplete_container .autocomplete_result ul {
+				box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.44);
+				-webkit-margin-before: 0em;
+				-webkit-margin-after: 0em;
+				-webkit-margin-start: 0px;
+				-webkit-margin-end: 0px;
+				-webkit-padding-start: 0px;
+				font-size: 14px;
+			}
+			.autocomplete_container .autocomplete_result ul.load{
+				text-align: center;
+				padding: 10px 15px;
+			}
+			.autocomplete_container .autocomplete_result li {
+				padding: 10px 15px;
+				border-bottom: 1px solid rgba(0, 0, 0, 0.11);
+				cursor: pointer;
+				overflow: hidden;
+				word-break: break-all;
+			}
+			
+			.autocomplete_container .autocomplete_result li:hover,
+			.autocomplete_container .autocomplete_result li.selected {
+				background: #50e3d9;
+				color: #fff;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="demo"></div>
+		<script>
+			$.fn.autocomplete = function(options) {
+				var defaults = {
+					placeholder: "搜索城市",
+					keyWord: "keyWord",
+					searchClass: "",
+					height: 25,
+					text: "name",
+					onChange: null,
+					onResult: null
+				}
+				var options = $.extend({}, defaults, options);
+				this.each(function() {
+					var obj = $(this);
+					var text = "";
+					var curr_selected = -1;
+					var queue=[];
+
+					//创建结构
+					//创建容器
+					var container = $("<div>").addClass("autocomplete_container").addClass(options.searchClass).css({
+						height: options.height,
+					});
+					//创建搜索框
+					var search = $("<input type='text' name='query' />").attr("placeholder", options.placeholder);
+					//创建下拉框
+					var result = $("<div>").addClass("autocomplete_result").css({
+						top: options.height + 2,
+
+					});
+					//下拉框父容器
+					var result_container = $("<ul>");
+
+					//添加动态结构
+					result.append(result_container);
+					container.append(search);
+					container.append(result);
+
+					//方法：等待加載
+					function loading() {
+						clear();
+						result.show();
+						result_container.addClass("load");
+						result_container.text("加载中...");
+					}
+					//方法：清空
+					function clear() {
+						curr_selected = -1;
+						result_container.empty().removeClass("load");
+					}
+					//方法：关闭
+					function close() {
+						text = "";
+						clear();
+						result.hide();
+					}
+					//下拉列表点击事件
+					result_container.on("click touchend ", "li", function(e) {
+						e.preventDefault();
+						search.val($(this).html());
+						options.onResult && options.onResult($(this).data());
+					}).on("mouseenter", "li", function() {
+						$(this).addClass('selected');
+					}).on("mouseleave", "li", function() {
+						$(this).removeClass('selected');
+					});;
+					//监测上、下、回车、Esc事件
+					search.keydown(function(e) {
+						switch(e.which) {
+							case 38: //上
+								e.preventDefault();
+								if(curr_selected <= 0) return;
+								curr_selected--;
+								$("li", result_container).removeClass("selected").eq(curr_selected).addClass("selected");
+								break;
+							case 40: //下
+								e.preventDefault();
+								if(curr_selected >= $("li", result_container).length - 1) return;
+								curr_selected++;
+								$("li", result_container).removeClass("selected").eq(curr_selected).addClass("selected");
+								break;
+							case 13: //回车
+								e.preventDefault();
+								var item = $("li", result_container).eq(curr_selected);
+								search.val(item.html());
+								options.onResult && options.onResult(item.data());
+								close();
+								break;
+							case 27: //Esc
+								e.preventDefault();
+								close();
+								break;
+						}
+					});
+					//正常的输入事件
+					search.on("change paste keyup", function(e) {
+						if(e.which != 13 && e.which != 27 && e.which != 38 && e.which != 40) {
+							if(text == search.val()) return;
+							text = search.val();
+							if(e.which == 8) obj.val('');
+							loading();
+							if(options.onChange) {
+								queue.push({});
+								options.onChange(search.val(), function(list) {
+									queue.pop();
+									if(queue.length>0)return;
+									clear();
+									for(var i = 0; i < list.length; i++) {
+										var temp = $("<li>").text(list[i][options.text]).data(list[i]);
+										result_container.append(temp);
+									}
+								});
+
+							}
+						}
+					});
+					//失去焦点事件
+					search.blur(close);
+
+					obj.append(container);
+				});
+			}
+			$(function() {
+				$("#demo").autocomplete({
+					onChange: function(t, fn) {
+
+						var list = [];
+						var count = Math.round(Math.random() * 10);
+						for(var i = 0; i < count; i++) {
+							list.push({
+								name: "搜索結果:" + t + i,
+								val: i
+							});
+						}
+						setTimeout(function(){fn && fn(list);},1000);
+					},
+					onResult: function(val) {
+						console.log(val)
+					}
+				});
+			});
+		</script>
+	</body>
+
+</html>
