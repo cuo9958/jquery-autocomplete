@@ -1,3 +1,4 @@
+//疯狂紫萧
 $.fn.autocomplete = function(options) {
 				var defaults = {
 					placeholder: "搜索城市",
@@ -5,6 +6,7 @@ $.fn.autocomplete = function(options) {
 					searchClass: "",
 					height: 25,
 					text: "name",
+					val: "val",
 					onChange: null,
 					onResult: null
 				}
@@ -13,7 +15,7 @@ $.fn.autocomplete = function(options) {
 					var obj = $(this);
 					var text = "";
 					var curr_selected = -1;
-					var queue=[];
+					var queue = [];
 
 					//创建结构
 					//创建容器
@@ -49,14 +51,17 @@ $.fn.autocomplete = function(options) {
 					}
 					//方法：关闭
 					function close() {
-						text = "";
-						clear();
-						result.hide();
+						setTimeout(function() {
+							text = "";
+							clear();
+							result.hide();
+						}, 200);
 					}
 					//下拉列表点击事件
 					result_container.on("click touchend ", "li", function(e) {
 						e.preventDefault();
 						search.val($(this).html());
+						obj.val($(this).data()[options.val]);
 						options.onResult && options.onResult($(this).data());
 					}).on("mouseenter", "li", function() {
 						$(this).addClass('selected');
@@ -82,6 +87,7 @@ $.fn.autocomplete = function(options) {
 								e.preventDefault();
 								var item = $("li", result_container).eq(curr_selected);
 								search.val(item.html());
+								obj.val(item.data()[options.val]);
 								options.onResult && options.onResult(item.data());
 								close();
 								break;
@@ -102,7 +108,7 @@ $.fn.autocomplete = function(options) {
 								queue.push({});
 								options.onChange(search.val(), function(list) {
 									queue.pop();
-									if(queue.length>0)return;
+									if(queue.length > 0) return;
 									clear();
 									for(var i = 0; i < list.length; i++) {
 										var temp = $("<li>").text(list[i][options.text]).data(list[i]);
