@@ -61,10 +61,12 @@
 				-webkit-padding-start: 0px;
 				font-size: 14px;
 			}
-			.autocomplete_container .autocomplete_result ul.load{
+			
+			.autocomplete_container .autocomplete_result ul.load {
 				text-align: center;
 				padding: 10px 15px;
 			}
+			
 			.autocomplete_container .autocomplete_result li {
 				padding: 10px 15px;
 				border-bottom: 1px solid rgba(0, 0, 0, 0.11);
@@ -91,6 +93,7 @@
 					searchClass: "",
 					height: 25,
 					text: "name",
+					val: "val",
 					onChange: null,
 					onResult: null
 				}
@@ -99,7 +102,7 @@
 					var obj = $(this);
 					var text = "";
 					var curr_selected = -1;
-					var queue=[];
+					var queue = [];
 
 					//创建结构
 					//创建容器
@@ -135,14 +138,17 @@
 					}
 					//方法：关闭
 					function close() {
-						text = "";
-						clear();
-						result.hide();
+						setTimeout(function() {
+							text = "";
+							clear();
+							result.hide();
+						}, 200);
 					}
 					//下拉列表点击事件
 					result_container.on("click touchend ", "li", function(e) {
 						e.preventDefault();
 						search.val($(this).html());
+						obj.val($(this).data()[options.val]);
 						options.onResult && options.onResult($(this).data());
 					}).on("mouseenter", "li", function() {
 						$(this).addClass('selected');
@@ -168,6 +174,7 @@
 								e.preventDefault();
 								var item = $("li", result_container).eq(curr_selected);
 								search.val(item.html());
+								obj.val(item.data()[options.val]);
 								options.onResult && options.onResult(item.data());
 								close();
 								break;
@@ -188,7 +195,7 @@
 								queue.push({});
 								options.onChange(search.val(), function(list) {
 									queue.pop();
-									if(queue.length>0)return;
+									if(queue.length > 0) return;
 									clear();
 									for(var i = 0; i < list.length; i++) {
 										var temp = $("<li>").text(list[i][options.text]).data(list[i]);
@@ -217,10 +224,9 @@
 								val: i
 							});
 						}
-						setTimeout(function(){fn && fn(list);},1000);
-					},
-					onResult: function(val) {
-						console.log(val)
+						setTimeout(function() {
+							fn && fn(list);
+						}, 1000);
 					}
 				});
 			});
